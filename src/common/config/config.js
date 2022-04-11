@@ -2,11 +2,11 @@
 module.exports = {
   default_module: 'api',
   weixin: {
-    appid: '', // 小程序 appid
-    secret: '', // 小程序密钥
+    appid: 'wx29050b79ed7bfe85', // 小程序 appid
+    secret: '1cc9221042ba29fe5a2b8cee11b1056a', // 小程序密钥
     mch_id: '', // 商户帐号ID
     partner_key: '', // 微信支付密钥
-    notify_url: '' // 微信异步通知，例：https://www.nideshop.com/api/pay/notify
+    notify_url: 'https://www.nideshop.com/api/pay/notify' // 微信异步通知，例：https://www.nideshop.com/api/pay/notify
   },
   express: {
     // 快递物流信息查询使用的是快递鸟接口，申请地址：http://www.kdniao.com/
