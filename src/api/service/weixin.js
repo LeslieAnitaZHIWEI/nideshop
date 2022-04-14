@@ -37,6 +37,33 @@ module.exports = class extends think.Service {
     }
   }
 
+  async getToken() {
+    const options = {
+      method: 'GET',
+      url: 'https://api.weixin.qq.com/cgi-bin/token',
+      qs: {
+        grant_type: 'client_credential',
+        secret: think.config('weixin.secret'),
+        appid: think.config('weixin.appid')
+      }
+    };
+    const res = await rp(options);
+    // eslint-disable-next-line no-console
+    console.log(res,'token');
+    return res;
+  }
+
+  async getPhone(code, token) {
+    const options = {
+      method: 'POST',
+      url: 'https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=' + token,
+      body: JSON.stringify({code: code})
+
+    };
+    const res = await rp(options);
+    return res;
+  }
+
   /**
    * 解析微信登录用户数据
    * @param sessionKey
