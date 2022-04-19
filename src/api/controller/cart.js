@@ -12,6 +12,38 @@ module.exports = class extends Base {
     let goodsAmount = 0.00;
     let checkedGoodsCount = 0;
     let checkedGoodsAmount = 0.00;
+    let pointsTotal=0
+    for (const cartItem of cartList) {
+      goodsCount += cartItem.number;
+      goodsAmount += cartItem.number * cartItem.retail_price;
+      if (!think.isEmpty(cartItem.checked)) {
+        checkedGoodsCount += cartItem.number;
+        checkedGoodsAmount += cartItem.number * cartItem.retail_price;
+      }
+      pointsTotal+=Number(cartItem.points)
+
+      // 查找商品的图片
+      cartItem.list_pic_url = await this.model('goods').where({id: cartItem.goods_id}).getField('list_pic_url', true);
+    }
+    return {
+      cartList: cartList,
+      cartTotal: {
+        goodsCount: goodsCount,
+        goodsAmount: goodsAmount,
+        checkedGoodsCount: checkedGoodsCount,
+        checkedGoodsAmount: checkedGoodsAmount,
+        pointsTotal: pointsTotal
+      }
+    };
+  }
+  async getCartPoint() {
+    const cartList = await this.model('cart_point').where({user_id: this.getLoginUserId(), session_id: 1}).select();
+    // 获取购物车统计信息
+    let goodsCount = 0;
+    let goodsAmount = 0.00;
+    let checkedGoodsCount = 0;
+    let checkedGoodsAmount = 0.00;
+    let pointsTotal=0
     for (const cartItem of cartList) {
       goodsCount += cartItem.number;
       goodsAmount += cartItem.number * cartItem.retail_price;
@@ -20,20 +52,23 @@ module.exports = class extends Base {
         checkedGoodsAmount += cartItem.number * cartItem.retail_price;
       }
 
+      pointsTotal+=Number(cartItem.points)
+
       // 查找商品的图片
       cartItem.list_pic_url = await this.model('goods').where({id: cartItem.goods_id}).getField('list_pic_url', true);
     }
-
     return {
       cartList: cartList,
       cartTotal: {
         goodsCount: goodsCount,
         goodsAmount: goodsAmount,
         checkedGoodsCount: checkedGoodsCount,
-        checkedGoodsAmount: checkedGoodsAmount
+        checkedGoodsAmount: checkedGoodsAmount,
+        pointsTotal: pointsTotal
       }
     };
   }
+
 
   /**
    * 获取购物车信息，所有对购物车的增删改操作，都要重新返回购物车的信息
@@ -110,6 +145,8 @@ module.exports = class extends Base {
     }
     return this.success(await this.getCart());
   }
+
+
 
   // 更新指定的购物车信息
   async updateAction() {
@@ -265,6 +302,59 @@ module.exports = class extends Base {
     const orderTotalPrice = cartData.cartTotal.checkedGoodsAmount + freightPrice - couponPrice; // 订单的总价
     const actualPrice = orderTotalPrice - 0.00; // 减去其它支付的金额后，要实际支付的金额
 
+    return this.success({
+      checkedAddress: checkedAddress,
+      freightPrice: freightPrice,
+      checkedCoupon: {},
+      couponList: couponList,
+      couponPrice: couponPrice,
+      checkedGoodsList: checkedGoodsList,
+      goodsTotalPrice: goodsTotalPrice,
+      orderTotalPrice: orderTotalPrice,
+      actualPrice: actualPrice
+    });
+  }
+
+
+  async checkoutPointAction() {
+    const addressId = this.get('addressId'); // 收货地址id
+    // const couponId = this.get('couponId'); // 使用的优惠券id
+
+    // 选择的收货地址
+    let checkedAddress = null;
+    if (addressId) {
+      checkedAddress = await this.model('address').where({id: addressId, user_id: this.getLoginUserId()}).find();
+
+    } else {
+
+      checkedAddress = await this.model('address').where({is_default: 1, user_id: this.getLoginUserId()}).find();
+    }
+
+    if (!think.isEmpty(checkedAddress)) {
+      checkedAddress.province_name = await this.model('region').getRegionName(checkedAddress.province_id);
+      checkedAddress.city_name = await this.model('region').getRegionName(checkedAddress.city_id);
+      checkedAddress.district_name = await this.model('region').getRegionName(checkedAddress.district_id);
+      checkedAddress.full_region = checkedAddress.province_name + checkedAddress.city_name + checkedAddress.district_name;
+    }
+
+    // 根据收货地址计算运费
+    const freightPrice = 0.00;
+
+    // 获取要购买的商品
+    const cartData = await this.getCartPoint();
+    const checkedGoodsList = cartData.cartList.filter(function(v) {
+      return v.checked === 1;
+    });
+
+    // 获取可用的优惠券信息，功能还示实现
+    const couponList = await this.model('user_coupon').select();
+    const couponPrice = 0.00; // 使用优惠券减免的金额
+
+    // 计算订单的费用
+    const goodsTotalPrice = cartData.cartTotal.checkedGoodsAmount; // 商品总价
+    const orderTotalPrice = cartData.cartTotal.checkedGoodsAmount + freightPrice - couponPrice; // 订单的总价
+    // const actualPrice = orderTotalPrice - 0.00; // 减去其它支付的金额后，要实际支付的金额
+    const actualPrice =cartData.cartTotal.pointsTotal;
     return this.success({
       checkedAddress: checkedAddress,
       freightPrice: freightPrice,
