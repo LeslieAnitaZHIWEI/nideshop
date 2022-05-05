@@ -5,7 +5,7 @@
  */
 const Base = require('./base.js');
 const moment = require('moment');
-
+const Core = require('@alicloud/pop-core');
 module.exports = class extends Base {
   async signInAction() {
     const hasRecord = await this.model('points_running').where({
@@ -139,11 +139,11 @@ module.exports = class extends Base {
     checkedAddress.full_region = checkedAddress.province_name + checkedAddress.city_name + checkedAddress.district_name;
     let info='姓名:'+checkedAddress.name+' '+'手机号:'+checkedAddress.mobile+' '+'地址:'+checkedAddress.full_region+checkedAddress.address+' '+'商品名:'+cart.goods_name
 
-
+    const nowtime=moment(new Date()).format('YYYY-MM-DD')
     const record = {
       user_id: this.getLoginUserId(),
       operate_type: 3, // 1签到 2手动添加 3兑换
-      operate_time: moment(new Date()).format('YYYY-MM-DD'),
+      operate_time: nowtime,
       points_value: -cart.points,
       good_id:cart.goods_id
     };
@@ -152,6 +152,35 @@ module.exports = class extends Base {
     await this.model('points').where({user_id: thisRecord.user_id}).update({
       points_total: thisRecord.points_total -cart.points
     });
+
+
+
+
+    var client = new Core({
+      accessKeyId: 'LTAI5tA7XC7ca25SC6AMvUsU',
+      accessKeySecret: 'k3QKkpVUYHG9jv83pNQbjx84LZivbc',
+      // securityToken: '<your-sts-token>', // use STS Token
+      endpoint: 'https://dysmsapi.aliyuncs.com',
+      apiVersion: '2017-05-25'
+    });
+
+    var params = {
+      "SignName": "浙家居",
+      "TemplateCode": "SMS_239322049",
+      "PhoneNumbers": "15868087788",
+      "TemplateParam": `{\"name\":\"${checkedAddress.name}\",\"time\":\"${nowtime}\",\"proname\":\"${cart.goods_name}\",\"phone\":\"${checkedAddress.mobile}\",\"address\":\"${checkedAddress.full_region+checkedAddress.address}\"}`
+    }
+
+    var requestOption = {
+      method: 'POST',
+      formatParams: false
+    };
+
+    client.request('SendSms', params, requestOption).then((result) => {
+      console.log(JSON.stringify(result));
+    }, (ex) => {
+      console.log(ex);
+    })
     return this.success({
       msg:'兑换成功'
     })
