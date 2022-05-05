@@ -147,7 +147,11 @@ module.exports = class extends Base {
       points_value: -cart.points,
       good_id:cart.goods_id
     };
-
+    if (thisRecord.points_total<cart.points) {
+      return this.fail({
+        errmsg: '积分不足,无法兑换!'
+      });
+    }
     await this.model('points_running').add(record);
     await this.model('points').where({user_id: thisRecord.user_id}).update({
       points_total: thisRecord.points_total -cart.points
