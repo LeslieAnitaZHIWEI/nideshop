@@ -328,6 +328,9 @@ module.exports = class extends Base {
     } else {
 
       checkedAddress = await this.model('address').where({is_default: 1, user_id: this.getLoginUserId()}).find();
+      if(think.isEmpty(checkedAddress)){
+        checkedAddress = await this.model('address').where({ user_id: this.getLoginUserId()}).find();
+      }
     }
 
 
