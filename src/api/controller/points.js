@@ -170,7 +170,7 @@ module.exports = class extends Base {
 
     var params = {
       "SignName": "浙家居",
-      "TemplateCode": "SMS_239322049",
+      "TemplateCode": "SMS_241050034",
       "PhoneNumbers": "15868087788",
       "TemplateParam": `{\"name\":\"${checkedAddress.name}\",\"time\":\"${nowtime}\",\"proname\":\"${cart.goods_name}\",\"phone\":\"${checkedAddress.mobile}\",\"address\":\"${checkedAddress.full_region+checkedAddress.address}\"}`
     }
