@@ -70,6 +70,12 @@ module.exports = class extends Base {
         gender: '', // 性别 0：未知、1：男、2：女
         nickname: ''
       });
+
+      const info = {
+        user_id: this.getLoginUserId(),
+        points_total: 0
+      };
+      await this.model('points').add(info);
     }
 
     // 查询用户信息
